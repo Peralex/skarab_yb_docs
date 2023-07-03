@@ -22,6 +22,13 @@ Bypass Mode | 2.8 GSPS | None (bypassed) | Only SKARAB ADC Boards with ADC32RF45
 
 Note that other sampling frequencies are available using the PLL of the SKARAB ADC board and that other decimation factors are provided by the ADC ICs. Please contact Peralex Electronics for more information.
 
+An update to SKARAB ADC firmware version 2.3 enables support for operating at 2.56 GSPS in both DDC Mode and Bypass Mode. In conjunction with SKARAB ADC firmware version 2.3, a Yellow Block firmware update adds support for decimate by 64 and 128. A 4/5 resampler (interpolate by 4, decimate by 5) converts a 2.56 GSPS sample rate to 2.048 GSPS. The updated table is as follows:
+
+Bandwidth Mode | Sampling Frequency | Decimation Factors | SKARAB ADC Board Support
+--- | --- | --- | --- 
+DDC Mode | 3 GSPS, 2.56 GSPS, 2.048 GSPS | 4, 8, 16, 32, 64, 128 | All SKARAB ADC Board Types with SKARAB ADC firmware version 2.3 or later
+Bypass Mode | 2.8 GSPS, 2.56 GSPS, 2.048 GSPS | None (bypassed) | Only SKARAB ADC Boards with ADC32RF45 with SKARAB ADC firmware version 2.3 or later
+
 The SKARAB ADC board is available in three ordering variants. These ordering variants are summarised in the table below:
 Ordering Variant | ADC ICs | PGA Support
 --- | --- | ---
@@ -47,7 +54,7 @@ In cases where synchronised sampling among more than four channels is required, 
 <img src="figures/TestSetupTwelveCh.png" width="700" />
 </p>
 
-Another option to allow synchronised sampling among more than four channels is to use more than one SKARAB system. This allows the number of SKARAB ADC boards in the hardware setup to extend beyond three. In this case, the synchronisation signal is daisy chained from the SKARAB ADC board Master to the the rest of the SKARAB ADC board Slaves among the SKARAB systems. Similarly, the SKARAB system containing the Master SKARAB ADC board is referred to as the "Master", while the remaining SKARAB systems are referred to as the "Slaves". The connections inside the SKARAB systems are made by Peralex Electronics while the connections outside will be made by the user of the hardware setup. The user will also terminate the synchronisation signal at the last system with 50 Ohm.
+Another option to allow synchronised sampling among more than four channels is to use more than one SKARAB system. This allows the number of SKARAB ADC boards in the hardware setup to extend beyond three. In this case, the synchronisation signal is daisy chained from the SKARAB ADC board Master to the rest of the SKARAB ADC board Slaves among the SKARAB systems. Similarly, the SKARAB system containing the Master SKARAB ADC board is referred to as the "Master", while the remaining SKARAB systems are referred to as the "Slaves". The connections inside the SKARAB systems are made by Peralex Electronics while the connections outside will be made by the user of the hardware setup. The user will also terminate the synchronisation signal at the last system with 50 Ohm.
 
 <p align="center">
 <img src="figures/TestSetupAdvanced.png" width="800" />
@@ -75,12 +82,22 @@ This Yellow Block provides four 16-bit I/Q sample pairs from each of the four ch
 
 [3 GSPS]/[decimate by 4 × 4 sample pairs per output clock cycle] = 187.5 MSPS
 
-When decimated by 8, 16 or 32, the four sample pairs are provided at rates of 93.75, 46.875 or 23.4375 MSPS, respectively.
+When decimated by 8, 16, 32, 64 or 128, the four sample pairs are provided at rates of 93.75, 46.875, 23.4375, 11.71875 or 5.859375 MSPS, respectively.
+
+[2.56 GSPS]/[decimate by 4 × 4 sample pairs per output clock cycle] = 160 MSPS
+
+When decimated by 8, 16, 32, 64 or 128, the four sample pairs are provided at rates of 80, 40, 20, 10 or 5 MSPS, respectively.
+
+[2.048 GSPS]/[decimate by 4 × 4 sample pairs per output clock cycle] = 128 MSPS
+
+When decimated by 8, 16, 32, 64 or 128, the four sample pairs are provided at rates of 64, 32, 16, 8 or 4 MSPS, respectively.
 
 The Yellow Block parameters are as follows:
 - Mezzanine slot: Mezzanine slot (0 to 3) of the SKARAB where the SKARAB ADC board is installed.
 - Master/Slave: The Master performs clocking (generates adc_clk) and synchronisation functions. There should only be one Master SKARAB ADC Yellow Block in a Simulink design while the remaining (if any) need to be Slaves.
-- Decimation Modes: The two available options are "4, 8, 16" or "4, 8, 16, 32". The decimate-by-32 mode requires additional processing inside the FPGA which would consume unnecessary logic resources if it was not required. Thus, an option was added to exclude it.
+- Trigger: The two available options are "Output" or "Input". Specifies whether the trigger port on the SKARAB ADC Board is an output or an input. Depending on the build of the SKARAB ADC Board, trigger can either be an input to the mezzanine or an output from the mezzanine. When Trigger is configured as "Output", drive the "trigger_out" port of yellow block with the desired signal that you want output by the SKARAB ADC Board. Note that "trigger_out" is an INPUT to the yellow block. When Trigger is configured as "Input", use the "trigger_in" port of the yellow block to monitor the current state of the SKARAB ADC Board trigger port. Note that "trigger_in" is an OUTPUT of the yellow block.
+- Decimation modes: The four available options are "4, 8, 16", "4, 8, 16, 32", "4, 8, 16, 32, 64" or "4, 8, 16, 32, 64, 128". The decimate-by-32, decimate-by-64 and decimate-by-128 modes require additional processing inside the FPGA which would consume unnecessary logic resources if they were not required. Thus, options are added to exclude them.
+- 4/5 Resampler: The two available options are "Enable" or "Disable". Specifies whether to include the 4/5 Resampler in the FPGA firmware. The 4/5 Resampler is required to convert 2.56 GSPS to 2.048 GSPS. The 4/5 resampler requires additional processing inside the FPGA which would consume unnecessary logic resources if it was not required. Thus, an option was added to exclude it. 
 
 The Yellow Block outputs are as follows:
 - adc0_data_i_out&lt;X&gt; (where X: 0 to 3): Four successive 16-bit I samples from channel 0
@@ -95,15 +112,26 @@ The Yellow Block outputs are as follows:
 - adc1_data_val_out: Channel 1 sample data valid signal
 - adc2_data_val_out: Channel 2 sample data valid signal
 - adc3_data_val_out: Channel 3 sample data valid signal
+- trigger_in: Current state of SKARAB ADC Board trigger input (when configured as an input)
+- pps_in: Current state of SKARAB ADC Board PPS input
+
+The Yellow Block inputs are as follows:
+- trigger_out: Signal to drive on SKARAB ADC Board trigger output (when configured as an output)
 
 ### Description of Bypass Mode SKARAB ADC Yellow Block (skarab_adc4x3g_14_byp) ###
 This Yellow Block provides sixteen 12-bit samples from each of the four channels of the SKARAB ADC board as output (in parallel). For a 2.8 GSPS sampling frequency, the sixteen samples are provided at a rate of 175 MSPS:
 
 [2.8 GSPS]/[16 samples per output clock cycle] = 175 MSPS
 
+[2.56 GSPS]/[16 samples per output clock cycle] = 160 MSPS
+
+[2.048 GSPS]/[16 samples per output clock cycle] = 128 MSPS
+
 The Yellow Block parameters are as follows:
 - Mezzanine slot: Mezzanine slot (0 to 3) of the SKARAB where the SKARAB ADC board is installed.
 - Master/Slave: The Master performs clocking (generates adc_clk) and synchronisation functions. There should only be one Master SKARAB ADC Yellow Block in a Simulink design while the remaining (if any) need to be Slaves.
+- Trigger: The two available options are "Output" or "Input". Specifies whether the trigger port on the SKARAB ADC Board is an output or an input. Depending on the build of the SKARAB ADC Board, trigger can either be an input to the mezzanine or an output from the mezzanine. When Trigger is configured as "Output", drive the "trigger_out" port of yellow block with the desired signal that you want output by the SKARAB ADC Board. Note that "trigger_out" is an INPUT to the yellow block. When Trigger is configured as "Input", use the "trigger_in" port of the yellow block to monitor the current state of the SKARAB ADC Board trigger port. Note that "trigger_in" is an OUTPUT of the yellow block.
+- 4/5 Resampler: The two available options are "Enable" or "Disable". Specifies whether to include the 4/5 Resampler in the FPGA firmware. The 4/5 Resampler is required to convert 2.56 GSPS to 2.048 GSPS. The 4/5 resampler requires additional processing inside the FPGA which would consume unnecessary logic resources if it was not required. Thus, an option was added to exclude it.
 
 The Yellow Block outputs are as follows:
 - adc0_data_out&lt;X&gt; (where X: 0 to 15): Sixteen successive 12-bit samples from channel 0
@@ -114,11 +142,17 @@ The Yellow Block outputs are as follows:
 - adc1_data_val_out: Channel 1 sample data valid signal
 - adc2_data_val_out: Channel 2 sample data valid signal
 - adc3_data_val_out: Channel 3 sample data valid signal
+- trigger_in: Current state of SKARAB ADC Board trigger input (when configured as an input)
+- pps_in: Current state of SKARAB ADC Board PPS input
   
+The Yellow Block inputs are as follows:
+- trigger_out: Signal to drive on SKARAB ADC Board trigger output (when configured as an output)
+
 ## Simulink Design Clocking Considerations ##
 
 Please note the User IP Clock source parameter of the SKARAB Yellow Block. Either sys_clk or adc_clk can be selected to clock the User IP. The implications of choosing either clock source follows:
--	adc_clk is a clock generated by a SKARAB ADC Yellow Block with a frequency that matches its output clock rate. Its frequency is either 187.5 or 175 MHz depending on whether the DDC or Bypass Mode SKARAB ADC Yellow Block is used, respectively. When using the Bypass Mode SKARAB ADC Yellow Block or the DDC Mode SKARAB ADC Yellow Block in decimate-by-4 mode, the valid signals of the Yellow Blocks are permanently asserted, and therefore does not need to be monitored after initial assertion. However, if the DDC Mode SKARAB ADC Yellow Block is used in other (8, 16, 32) decimation modes, the decimated sample rate is lower than 187.5 MHz, and the valid signals will need to be respected. Also, when using adc_clk, the Simulink Design User IP will not be clocked until initialisation of the SKARAB ADC board along with its corresponding SKARAB ADC Yellow Block.
+
+- adc_clk is a clock generated by a SKARAB ADC Yellow Block with a frequency that matches its output clock rate. Its frequency depends on the sample rate of the ADC and the operating mode. When using the Bypass Mode SKARAB ADC Yellow Block or the DDC Mode SKARAB ADC Yellow Block in decimate-by-4 mode, the valid signals of the Yellow Blocks are permanently asserted, and therefore does not need to be monitored after initial assertion. However, if the DDC Mode SKARAB ADC Yellow Block is used in other (8, 16, 32, 64, 128) decimation modes or the 4/5 resampler is enabled for 2.048 GSPS, the valid signals will need to be respected. Also, when using adc_clk, the Simulink Design User IP will not be clocked until initialisation of the SKARAB ADC board along with its corresponding SKARAB ADC Yellow Block.
 -	sys_clk is a free running clock which has no relation to the sampling rate of the SKARAB ADC board. By necessity, the selected sys_clk frequency must be greater than the SKARAB ADC Yellow Block sample data output rate. Thus, the user needs to respect the data valid signals of the SKARAB ADC Yellow Block on subsequent processing blocks. This clocking scheme allows subsequent signal processing to run at a higher clock rate than the SKARAB ADC Yellow Block data output rate. However, not all Yellow Blocks support clock gating (data valid) signals. Also, an advantage of sys_clk is that the clocking of the Simulink Design User IP is independent of the initialisation of any of the SKARAB ADC boards or their corresponding SKARAB ADC Yellow Blocks.
 
 <p align="center">
@@ -151,10 +185,11 @@ Each of the four Simulink design models consists of the following components:
 <p align="center"><img src="figures/SkarabAndXilinxYbs.png" width="400" /></p>
 
 The user of the Simulink design needs to do the following before creating an fpg file from it:
-- Set the Mezzanine Slot of each SKARAB ADC Yellow Block to indicate where its corresponding
-SKARAB ADC board is installed.
+- Set the Mezzanine Slot of each SKARAB ADC Yellow Block to indicate where its corresponding SKARAB ADC board is installed.
 - Set the User IP Clock Source of the design.
 - If a DDC Mode SKARAB ADC Yellow Block is used in the design, set the decimation modes that should be supported.
+- Set whether trigger is an input or output.
+- Set whether the 4/5 resampler is needed in the design or not.
 - Ensure that there is only one Master SKARAB ADC Yellow Block in the design.
 
 The links to the Simulink design models are:
@@ -178,9 +213,9 @@ The links to the ADC data plotting MATLAB scripts are:
 
 
 ## SKARAB ADC Firmware Version Requirements ##
-A SKARAB ADC board needs to be programmed with firmware version 2.2 to be compatible with the latest casperfgpa functions and the SKARAB ADC Yellow Blocks. The skarab_adc_reconfig.py Python script can be used to update the SKARAB ADC board firmware to this version. Please read the comments in the header of this script for an explanation of how to use it.
+A SKARAB ADC board needs to be programmed with firmware version 2.3 to be compatible with the latest casperfgpa functions and the SKARAB ADC Yellow Blocks. The skarab_adc_reconfig.py Python script can be used to update the SKARAB ADC board firmware to this version. Please read the comments in the header of this script for an explanation of how to use it.
 
-Two bin file variants of the SKARAB ADC firmware version 2.2 are provided: EMB124901U8R2_DDC.bin and EMB124901U8R2_BYP.bin. The only difference between them is the default bandwidth mode in which they configure the SKARAB ADC board on startup. EMB124901U8R2_DDC.bin configures it in DDC mode on startup, while EMB124901U8R2_BYP.bin configures it in Bypass mode on startup. When only using a SKARAB ADC board in a single bandwidth mode, the appropriate bin file can be chosen so that it is not required to configure the SKARAB ADC board after startup using a casperfpga function.
+Two bin file variants of the SKARAB ADC firmware version 2.3 are provided: EMB124901U8R2_DDC.bin and EMB124901U8R2_BYP.bin. The only difference between them is the default bandwidth mode in which they configure the SKARAB ADC board on startup. EMB124901U8R2_DDC.bin configures it in DDC mode on startup, while EMB124901U8R2_BYP.bin configures it in Bypass mode on startup. When only using a SKARAB ADC board in a single bandwidth mode, the appropriate bin file can be chosen so that it is not required to configure the SKARAB ADC board after startup using a casperfpga function.
 
 The skarab_adc_reconfig.py Python script and the two bin files can be found here:
 [SKARAB ADC FW](https://github.com/ska-sa/mlib_devel/tree/devel/jasper_library/test_models/scripts/skarab_adc_reconfig)
